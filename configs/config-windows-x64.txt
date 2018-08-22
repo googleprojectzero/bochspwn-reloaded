@@ -1,0 +1,53 @@
+[general]
+log_path              = <output log path>
+
+version               = win7_64
+callstack_length      = 64
+
+symbolize             = 1
+symbol_path           = <symbol path>
+
+pool_alloc_prologues  = 0x1E0590
+pool_alloc_epilogues  = 0x1E07AD
+
+track_origins         = 1
+uniquize              = 1
+break_on_bug          = 1
+
+KiSystemCall64_offset = 0x1D8D00
+
+memcpy_signature      = 4C8BD9482BD10F829E0100004983F808
+
+[win7_64]
+kprcb               = 0x20
+current_thread      = 0x08
+tcb                 = 0x0
+process             = 0x210
+client_id           = 0x3b8
+process_id          = 0
+thread_id           = 8
+image_filename      = 0x2e0
+psloadedmodulelist  = 0x23FA90
+loadorder_flink     = 0x0
+basedllname         = 0x58
+baseaddress         = 0x30
+sizeofimage         = 0x40
+us_len              = 0x0
+us_buffer           = 0x8
+
+[win10_64]
+kprcb               = 0x20
+current_thread      = 0x08
+tcb                 = 0x0
+process             = 0x220
+client_id           = 0x638
+process_id          = 0
+thread_id           = 8
+image_filename      = 0x450
+psloadedmodulelist  = 0x366FD0
+loadorder_flink     = 0x0
+basedllname         = 0x58
+baseaddress         = 0x30
+sizeofimage         = 0x40
+us_len              = 0x0
+us_buffer           = 0x8

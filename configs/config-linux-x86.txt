@@ -1,0 +1,41 @@
+[general]
+log_path               = <output log path>
+
+version                = ubuntu_16.10_x86
+
+callstack_length       = 64
+
+taint_heap             = 1
+taint_stack            = 1
+track_origins          = 1
+
+kmalloc_prologues      = 0xC11CCB40,0xC119A830,0xC11CEE90
+vmalloc_prologues      = 0xC11B6980
+heap_alloc_epilogues   = 0xC11CCC2F,0xC11CCC80,0xC11CCCD3,0xC119A85D,0xC119A863,0xC11CEF73,0xC11CEFD0,0xC11CF023,0xC11B69ED
+heap_frees             = 0xC11CBFC0,0xC11B65B0
+cache_create_prologues = 0xC119AE30
+cache_create_epilogues = 0xC119AEA8,0xC119AF89
+cache_destroy          = 0xC119B050
+cache_alloc_prologues  = 0xC11CDA20,0xC11CCD30
+cache_alloc_epilogues  = 0xC11CDAFD,0xC11CDB4F,0xC11CCE12,0xC11CCE67
+cache_frees            = 0xC11CC110
+
+blacklist              = 0xC17D410D
+
+uniquize               = 1
+break_on_bug           = 1
+only_kernel_to_user    = 1
+
+dump_shadow_to_files   = 0
+dump_shadow_interval   = 20
+dump_shadow_path       = <dump shadow path>
+
+[ubuntu_16.10_x86]
+modules                = 0xC1B3A978
+module_list            = 0x4
+module_name            = 0xc
+module_base            = 0x100
+module_size            = 0x104
+module_name_len        = 60
+kernel_start           = 0xC1000000
+kernel_end             = 0xC1FE8000

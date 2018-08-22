@@ -1,0 +1,104 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// Author: Mateusz Jurczyk (mjurczyk@google.com)
+//
+// Copyright 2017-2018 Google LLC
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+message bug_report_t {
+  // Linear address of the accessed memory.
+  required uint64 lin = 1;
+
+  // Memory access length (in bytes). This value can be 1/2/4/8, and
+  // symbolizes the size of a single atomic memory fetch. If a continuous
+  // memory area has been referenced using fetches of the same size, the
+  // "repeated" field will contain the number of repetitions. The following
+  // value:
+  //               len * repeated
+  // makes the total size of the referenced memory area.
+  required uint32 len = 2;
+
+  enum mem_access_type {
+    MEM_READ = 0;
+    MEM_WRITE = 1;
+    MEM_EXEC = 2;
+    MEM_RW = 3;
+  };
+
+  // Type of memory access. The Read/Write type is reserved for
+  // instructions which read from a memory area and immediately write back
+  // to it (e.g. inc [mem32]).
+  required mem_access_type access_type = 3;
+
+  // Absolute EIP or RIP of the instruction provoking the memory fetch.
+  required uint64 pc = 4;
+
+  // Process filename.
+  required bytes image_file_name = 5;
+  // Process ID.
+  required uint32 process_id = 6;
+  // Thread ID.
+  required uint32 thread_id = 9;
+
+  message callstack_item {
+    required uint64 relative_pc = 1;
+    required uint64 module_base = 2;
+    required string module_name = 3;
+  }
+
+  // A stack trace at the time of the memory access.
+  //
+  // Note: stack_trace[0].module_base + stack_trace[0].relative_pc should
+  // be equal to the "pc" value.
+  repeated callstack_item stack_trace = 10;
+
+  // Textual representation of the memory-fetching instruction.
+  required string pc_disasm = 11;
+
+  // Indicates if it's a regular uninitialized memory use (false) or a
+  // kernel-to-user memory disclosure issue (true).
+  required bool kernel_to_user = 12;
+
+  // If this is a kernel-to-user copy operation, this field may contain the
+  // user-mode destination address being written to.
+  optional uint32 copy_dest_address = 13;
+
+  // Base address of the affected pool allocation (can be used to calculate
+  // relative offset of the field subject to uninitialized use).
+  optional uint32 alloc_address = 14;
+
+  // Original allocation size.
+  optional uint32 alloc_size = 15;
+
+  // Pool allocation tag.
+  optional uint32 alloc_tag = 16;
+
+  // Origin of where the allocation was made.
+  optional uint32 alloc_origin = 17;
+
+  // Initialization metadata bytes for the accessed region.
+  required bytes meta_init = 18;
+
+  // Initialization metadata bytes for the whole allocation region (if
+  // available).
+  optional bytes full_copy_meta_init = 19;
+
+  // Original bytes from the region (should always only contain the padding
+  // bytes, this is mostly a debugging feature).
+  required bytes region_body = 20;
+}
+

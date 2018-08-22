@@ -1,0 +1,66 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// Author: Mateusz Jurczyk (mjurczyk@google.com)
+//
+// Copyright 2017-2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+message bug_report_t {
+  // Address of the overall region copied to user-mode.
+  required uint64 lin = 1;
+
+  // Length of the memory copy operation.
+  required uint64 len = 2;
+
+  // Absolute RIP of the instruction where the leak was detected.
+  required uint64 pc = 3;
+
+  // Process filename.
+  required bytes image_file_name = 4;
+  // Process ID.
+  required uint32 process_id = 5;
+  // Thread ID.
+  required uint32 thread_id = 6;
+
+  message callstack_item {
+    required uint64 relative_pc = 1;
+    required uint64 module_base = 2;
+    required string module_name = 3;
+  }
+
+  // A complete stack trace of the moment when the leak was detected.
+  //
+  // Note: stack_trace[0].module_base + stack_trace[0].relative_pc should
+  // be equal to the "pc" value.
+  repeated callstack_item stack_trace = 7;
+
+  // Textual representation of the current instruction.
+  required string pc_disasm = 8;
+
+  // This field contains the user-mode destination address being written to.
+  required uint64 copy_dest_address = 9;
+
+  // Origin of where the allocation was made.
+  required uint64 alloc_origin = 10;
+
+  // Initialization metadata bytes for the copied region.
+  required bytes shadow_memory = 11;
+
+  // Original bytes from the region.
+  required bytes region_body = 12;
+}
+

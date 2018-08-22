@@ -1,0 +1,48 @@
+[general]
+origin_log_path      = <origin log path>
+
+bitness              = 32
+version              = win7_32
+
+callstack_origin_index = 0
+
+pool_allocs          = 0x123AB2
+
+[win7_32]
+kprcb                = 0x120
+current_thread       = 0x04
+tcb                  = 0x0
+process              = 0x150
+client_id            = 0x22c
+process_id           = 0
+thread_id            = 4
+create_time          = 0x200
+image_filename       = 0x16c
+kdversionblock       = 0x34
+psloadedmodulelist   = 0x18
+loadorder_flink      = 0x0
+basedllname          = 0x2c
+baseaddress          = 0x18
+us_len               = 0x0
+us_buffer            = 0x4
+teb_cid              = 0x20
+
+[win8.1_32]
+kprcb                = 0x120
+current_thread       = 0x04
+tcb                  = 0x0
+process              = 0x150
+client_id            = 0x33c
+process_id           = 0
+thread_id            = 4
+create_time          = 0x310
+image_filename       = 0x170
+kdversionblock       = 0x34
+psloadedmodulelist   = 0x18
+loadorder_flink      = 0x0
+basedllname          = 0x2c
+baseaddress          = 0x18
+us_len               = 0x0
+us_buffer            = 0x4
+teb_cid              = 0x20
+
