@@ -23,7 +23,7 @@ The steps required to cross-compile Bochspwn Reloaded on Linux to run on Windows
 1. Install the `x86_64-w64-mingw32` compiler via the `mingw-w64` package.
 2. Download [Protocol Buffers 3.4.1](https://github.com/google/protobuf/releases/tag/v3.4.1), unpack it, compile and install, both for your local toolchain (to get access to the `protoc` command-line utility), and for the `x86_64-w64-mingw32` cross-compilation toolchain (to install the essential headers and libraries).
 3. Download the latest version of Bochs (currently 2.6.9), unpack it, and copy the desired instrumentation directory (e.g. `windows-x64`), together with the corresponding third-party subdirectory (e.g. `third_party/instrumentation/windows-x64`) into `bochs-2.6.9/instrument`.
-4. In case of Windows-specific instrumentations, copy the DbgHelp library file (`dbghelp.lib` or `dbghelp.dll`) from a Microsoft SDK or your local Windows installation to the `bochs-2.6.9/instrument/<instrumentation>` directory.
+4. In case of Windows-specific instrumentations, copy the DbgHelp header (`DbgHelp.h`) and library file (`dbghelp.lib` or `dbghelp.dll`) from a Microsoft SDK to the `bochs-2.6.9/instrument/<instrumentation>` directory.
 5. Configure Bochs and compile it:
 ```bash
 $ CFLAGS="-O2 -Wno-narrowing -Wno-format" \
