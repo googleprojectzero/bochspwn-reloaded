@@ -3,13 +3,13 @@
 // Author: Mateusz Jurczyk (mjurczyk@google.com)
 //
 // Copyright 2017-2018 Google LLC
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -114,7 +114,7 @@ static bool init_basic_config(const char *config_path, bochspwn_config *config) 
   // Read the state-dumping settings.
   READ_INI_INT(config_path, "general", "dump_shadow_to_files", buffer, sizeof(buffer),
                &config->dump_shadow_to_files);
-  
+
   if (config->dump_shadow_to_files != 0) {
     READ_INI_INT(config_path, "general", "dump_shadow_interval", buffer, sizeof(buffer),
                  &config->dump_shadow_interval);
@@ -361,7 +361,7 @@ void bx_instr_exit(unsigned cpu) {
   // Free helper allocations.
   free(globals::pool_taint_alloc);
   globals::pool_taint_alloc = NULL;
-  
+
   free(globals::stack_taint_alloc);
   globals::stack_taint_alloc = NULL;
 }
@@ -408,8 +408,8 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_address phy,
   bool kernel_to_user = false;
   uint32_t copy_dest_address = 0;
   if (globals::rep_movs) {
-    bool dst_in_kernel = windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx);
-    bool src_in_kernel = windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESI].rrx);
+    bool dst_in_kernel = windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx);
+    bool src_in_kernel = windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESI].dword.erx);
 
     // One of dst/src must be kernel-mode for it to be interesting.
     if (!dst_in_kernel && !src_in_kernel) {
@@ -428,15 +428,15 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_address phy,
       // part of a pool allocation, or check taint if we're copying
       // back to user-mode.
       if (dst_in_kernel && src_in_kernel) {
-        taint::copy_taint(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx, lin, len);
+        taint::copy_taint(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx, lin, len);
         if (globals::config.track_origins) {
-          taint::copy_origin(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx, lin, len);
+          taint::copy_origin(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx, lin, len);
         }
       } else if (!dst_in_kernel && src_in_kernel) {
         taint::access_type ac_type = taint::check_access(pcpu, lin, len);
         if (ac_type == taint::ACCESS_INVALID) {
           kernel_to_user = true;
-          copy_dest_address = pcpu->gen_reg[BX_32BIT_REG_EDI].rrx;
+          copy_dest_address = pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx;
           goto error_found;
         } else if (ac_type == taint::METADATA_PADDING_MISMATCH) {
           taint::set_init_type(lin, len, MEM_INIT);
@@ -554,13 +554,13 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
     const unsigned int kPageAllocBoundary = 4080;
     switch (bp::check_breakpoint(pc - globals::nt_base)) {
       case BP_POOL_ALLOC: {
-        bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
         if (region != 0) {
           unsigned int len;
           uint32_t tag;
 
-          if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 2 * 4, 4, &len) &&
-              read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 3 * 4, 4, &tag)) {
+          if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 2 * 4, 4, &len) &&
+              read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 3 * 4, 4, &tag)) {
             if (len <= kPageAllocBoundary) {
               taint::mark_allocated(
                   region, len, tag, globals::config.taint_pools ? MEM_UNINIT_HEAP : MEM_INIT);
@@ -571,7 +571,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 
             uint32_t origin;
             if (globals::config.track_origins &&
-                read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx, 4, &origin)) {
+                read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx, 4, &origin)) {
               taint::set_origin(region, len, origin);
             }
           }
@@ -581,7 +581,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 
       case BP_POOL_FREE: {
         bx_address region = 0;
-        if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 1 * 4, 4, &region)) {
+        if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 1 * 4, 4, &region)) {
           taint::mark_free(region);
         }
         break;
@@ -595,9 +595,9 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
               opcode == BX_IA_AND_GdEd || opcode == BX_IA_ADD_EdGd || opcode == BX_IA_AND_EdId ||
               opcode == BX_IA_XCHG_ERXEAX) &&
              (i->dst() == BX_32BIT_REG_ESP)) {
-    if (windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].rrx)) {
+    if (windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx)) {
       globals::esp_change = true;
-      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     }
   }
 }
@@ -608,7 +608,7 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
 
   if (globals::esp_change) {
     BX_CPU_C *pcpu = BX_CPU(cpu);
-    uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
     if (new_esp < globals::esp_value) {
       uint32_t length = globals::esp_value - new_esp;
@@ -626,9 +626,9 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
             // SUB ESP, EAX is a special construct used in generic function prologue
             // functions such as __SEH_prolog4. In order to obtain a real unique
             // origin of the allocation, we must read it from stack.
-            uint32_t real_origin = 0; 
-            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EBP].rrx - 2 * 4, 4, &real_origin);
-            
+            uint32_t real_origin = 0;
+            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EBP].dword.erx - 2 * 4, 4, &real_origin);
+
             if (windows::check_kernel_addr(real_origin)) {
               origin = real_origin;
             }
@@ -636,9 +636,9 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
             // XCHG ESP, EAX is a special construct used in nt!_alloca_probe. In
             // order to obtain the real unique origin of the allocation, we must
             // read it from [EAX].
-            uint32_t real_origin = 0; 
-            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EAX].rrx, 4, &real_origin);
-            
+            uint32_t real_origin = 0;
+            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx, 4, &real_origin);
+
             if (windows::check_kernel_addr(real_origin)) {
               origin = real_origin;
             }
