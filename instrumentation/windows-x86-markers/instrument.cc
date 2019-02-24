@@ -98,7 +98,7 @@ static bool read_nth_origin(BX_CPU_C *pcpu, uint32_t index, uint32_t *origin) {
     return true;
   }
 
-  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].rrx;
+  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].dword.erx;
   for (uint32_t i = 1; i < index; i++) {
     if (!windows::check_kernel_addr(bp) || !read_lin_mem(pcpu, bp, 4, &bp)) {
       return false;
@@ -182,16 +182,16 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 
     // Check if it's one of the pool allocation routines.
     if (bp::check_breakpoint(pc - globals::nt_base) == BP_POOL_ALLOC) {
-      bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+      bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
       if (region != 0) {
         unsigned int len;
         uint32_t tag, origin;
 
-        if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 2 * 4, 4, &len) &&
-            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 3 * 4, 4, &tag)) {
+        if (read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 2 * 4, 4, &len) &&
+            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 3 * 4, 4, &tag)) {
           bool origin_found = false;
           if (globals::config.callstack_origin_index == 0) {
-            origin_found = read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx, 4, &origin);
+            origin_found = read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx, 4, &origin);
           } else {
             origin_found = read_nth_origin(pcpu, globals::config.callstack_origin_index, &origin);
           }
@@ -209,9 +209,9 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
               opcode == BX_IA_ADD_GdEd || opcode == BX_IA_ADD_EdGd || opcode == BX_IA_ADD_EdId ||
               opcode == BX_IA_AND_GdEd || opcode == BX_IA_ADD_EdGd || opcode == BX_IA_AND_EdId) &&
              (i->dst() == BX_32BIT_REG_ESP)) {
-    if (windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].rrx)) {
+    if (windows::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx)) {
       globals::esp_change = true;
-      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     }
   }
 }
@@ -220,7 +220,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
   if (globals::esp_change) {
     BX_CPU_C *pcpu = BX_CPU(cpu);
-    const uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    const uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
     if (new_esp < globals::esp_value) {
       const uint32_t length = globals::esp_value - new_esp;
@@ -237,7 +237,7 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
               i->dst() == BX_32BIT_REG_ESP &&
               i->src() == BX_32BIT_REG_EAX) {
             uint32_t real_origin = 0; 
-            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EBP].rrx - 2 * 4, 4, &real_origin);
+            read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EBP].dword.erx - 2 * 4, 4, &real_origin);
             
             if (windows::check_kernel_addr(real_origin)) {
               origin = real_origin;

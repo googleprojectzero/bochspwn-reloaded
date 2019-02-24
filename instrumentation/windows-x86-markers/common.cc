@@ -54,7 +54,7 @@ bool get_nth_caller(BX_CPU_C *pcpu, unsigned int idx, uint32_t *caller_address) 
   }
 
   uint32_t ip = pcpu->prev_rip;
-  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].rrx;
+  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].dword.erx;
 
   unsigned int i;
   for (i = 0;

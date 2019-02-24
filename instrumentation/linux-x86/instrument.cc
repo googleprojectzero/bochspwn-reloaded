@@ -432,8 +432,8 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_address phy,
   bool kernel_to_user = false;
   uint32_t copy_dest_address = 0;
   if (globals::rep_movs) {
-    bool dst_in_kernel = linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx);
-    bool src_in_kernel = linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESI].rrx);
+    bool dst_in_kernel = linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx);
+    bool src_in_kernel = linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESI].dword.erx);
 
     // One of dst/src must be kernel-mode for it to be interesting.
     if (!dst_in_kernel && !src_in_kernel) {
@@ -452,15 +452,15 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_address phy,
       // part of a heap allocation, or check taint if we're copying
       // back to user-mode.
       if (dst_in_kernel && src_in_kernel) {
-        taint::copy_taint(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx, lin, len);
+        taint::copy_taint(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx, lin, len);
         if (globals::config.track_origins) {
-          taint::copy_origin(pcpu->gen_reg[BX_32BIT_REG_EDI].rrx, lin, len);
+          taint::copy_origin(pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx, lin, len);
         }
       } else if (!dst_in_kernel && src_in_kernel) {
         taint::access_type ac_type = taint::check_access(pcpu, lin, len);
         if (ac_type == taint::ACCESS_INVALID) {
           kernel_to_user = true;
-          copy_dest_address = pcpu->gen_reg[BX_32BIT_REG_EDI].rrx;
+          copy_dest_address = pcpu->gen_reg[BX_32BIT_REG_EDI].dword.erx;
           goto error_found;
         } else if (ac_type == taint::METADATA_PADDING_MISMATCH) {
           taint::mark_init(lin, len);
@@ -501,7 +501,7 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_address phy,
 error_found:
   // Report the uninitialized read according to the configuration.
   if (globals::config.only_kernel_to_user) {
-    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     if (!kernel_to_user && globals::strict_checking.find(esp) == globals::strict_checking.end()) {
       return;
     }
@@ -585,25 +585,25 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 
     switch (bp::check_breakpoint(pc)) {
       case BP_KMALLOC_PROLOGUE: {
-        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
         globals::per_site_alloc_reqs[esp].cache = 0;
-        globals::per_site_alloc_reqs[esp].length = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
-        globals::per_site_alloc_reqs[esp].flags = pcpu->gen_reg[BX_32BIT_REG_EDX].rrx;
+        globals::per_site_alloc_reqs[esp].length = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
+        globals::per_site_alloc_reqs[esp].flags = pcpu->gen_reg[BX_32BIT_REG_EDX].dword.erx;
         break;
       }
 
       case BP_VMALLOC_PROLOGUE: {
-        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
         globals::per_site_alloc_reqs[esp].cache = 0;
-        globals::per_site_alloc_reqs[esp].length = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
-        globals::per_site_alloc_reqs[esp].flags = pcpu->gen_reg[BX_32BIT_REG_ECX].rrx;
+        globals::per_site_alloc_reqs[esp].length = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
+        globals::per_site_alloc_reqs[esp].flags = pcpu->gen_reg[BX_32BIT_REG_ECX].dword.erx;
         break;
       }
 
       case BP_ALLOC_FREE: {
-        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
         if (region > 0x10) {
           taint::mark_free(region);
         }
@@ -611,10 +611,10 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
       }
 
       case BP_CACHE_CREATE_PROLOGUE: {
-        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
-        const uint32_t size = pcpu->gen_reg[BX_32BIT_REG_EDX].rrx;
+        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
+        const uint32_t size = pcpu->gen_reg[BX_32BIT_REG_EDX].dword.erx;
         uint32_t constructor = 0;
-        read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx + 8, 4, &constructor);
+        read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx + 8, 4, &constructor);
 
         globals::per_site_cache_reqs[esp].size = size;
         globals::per_site_cache_reqs[esp].constructor = constructor;
@@ -622,7 +622,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
       }
 
       case BP_CACHE_DESTROY: {
-        const uint32_t cache = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        const uint32_t cache = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
         auto kmem_cache = globals::kmem_caches.find(cache);
         if (kmem_cache == globals::kmem_caches.end()) {
           break;
@@ -636,9 +636,9 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
       }
 
       case BP_CACHE_ALLOC_PROLOGUE: {
-        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
-        const uint32_t cache = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
-        const uint32_t alloc_flags = pcpu->gen_reg[BX_32BIT_REG_EDX].rrx;
+        const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
+        const uint32_t cache = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
+        const uint32_t alloc_flags = pcpu->gen_reg[BX_32BIT_REG_EDX].dword.erx;
 
         if (globals::kmem_caches.find(cache) == globals::kmem_caches.end()) {
           break;
@@ -652,7 +652,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
       }
 
       case BP_CACHE_FREE: {
-        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EDX].rrx;
+        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EDX].dword.erx;
         if (region > 0x10) {
           taint::mark_free(region);
         }
@@ -660,7 +660,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
       }
 
       case BP_CACHE_CONSTRUCTOR: {
-        const uint32_t region = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        const uint32_t region = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
         const uint32_t size = globals::kmem_cache_constructor_to_size[pc];
 
         if (size <= kTaintHelperAllocSize) {
@@ -674,7 +674,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
     //
     // Handling of RETn opcode (allocator epilogues).
     //
-    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
     switch (bp::check_breakpoint(pc)) {
       case BP_CACHE_CREATE_EPILOGUE: {
@@ -685,7 +685,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
           return;
         }
 
-        const uint32_t kmem_cache_addr = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        const uint32_t kmem_cache_addr = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
 
         if (kmem_cache_addr != 0) {
           bp::add_breakpoint(it->second.constructor, BP_CACHE_CONSTRUCTOR);
@@ -703,7 +703,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
           return;
         }
 
-        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].rrx;
+        const bx_address region = pcpu->gen_reg[BX_32BIT_REG_EAX].dword.erx;
         const uint32_t cache = globals::per_site_alloc_reqs[esp].cache;
         const unsigned int len = globals::per_site_alloc_reqs[esp].length;
         const uint32_t flags = globals::per_site_alloc_reqs[esp].flags;
@@ -727,7 +727,7 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
 
           uint32_t origin;
           if (globals::config.track_origins &&
-              read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].rrx, 4, &origin)) {
+              read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx, 4, &origin)) {
             taint::set_origin(region, len, origin);
           }
         }
@@ -743,15 +743,15 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *i) {
               opcode == BX_IA_ADD_GdEd || opcode == BX_IA_ADD_EdGd || opcode == BX_IA_ADD_EdId ||
               opcode == BX_IA_AND_GdEd || opcode == BX_IA_ADD_EdGd || opcode == BX_IA_AND_EdId) &&
              (i->dst() == BX_32BIT_REG_ESP)) {
-    if (linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].rrx)) {
+    if (linux::check_kernel_addr(pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx)) {
       globals::esp_change = true;
-      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+      globals::esp_value = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     }
   } else if (opcode == BX_IA_PREFETCHT1_Mb) {
-    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     globals::strict_checking.insert(esp);
   } else if (opcode == BX_IA_PREFETCHT2_Mb) {
-    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    const uint32_t esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
     globals::strict_checking.erase(esp);
   }
 }
@@ -762,7 +762,7 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *i) {
 
   if (globals::esp_change) {
     BX_CPU_C *pcpu = BX_CPU(cpu);
-    uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].rrx;
+    uint32_t new_esp = pcpu->gen_reg[BX_32BIT_REG_ESP].dword.erx;
 
     if (new_esp < globals::esp_value) {
       uint32_t length = globals::esp_value - new_esp;

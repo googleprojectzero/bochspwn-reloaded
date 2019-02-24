@@ -110,12 +110,12 @@ void invoke_guest_int3(BX_CPU_C *pcpu) {
   // Save information about the original code, so that it can be restored when
   // the breakpoint fires.
   globals::bp_active = true;
-  globals::bp_address = pcpu->gen_reg[BX_32BIT_REG_EIP].rrx;
+  globals::bp_address = pcpu->gen_reg[BX_32BIT_REG_EIP].dword.erx;
   globals::bp_orig_byte = 0xcc;
-  read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EIP].rrx, 1, &globals::bp_orig_byte);
+  read_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EIP].dword.erx, 1, &globals::bp_orig_byte);
 
   // Overwrite the next instruction with an INT3, which will trigger a
   // guest breakpoint.
-  write_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EIP].rrx, 1, (void *)"\xcc");
+  write_lin_mem(pcpu, pcpu->gen_reg[BX_32BIT_REG_EIP].dword.erx, 1, (void *)"\xcc");
 }
 

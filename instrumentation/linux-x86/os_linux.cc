@@ -96,7 +96,7 @@ bool check_user_addr(uint32_t addr) {
 void fill_callstack(BX_CPU_C *pcpu, bug_report_t *bug_report) {
   // Read the stack trace.
   uint32_t ip = pcpu->prev_rip;
-  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].rrx;
+  uint32_t bp = pcpu->gen_reg[BX_32BIT_REG_EBP].dword.erx;
   module_info *mi = NULL;
 
   for (unsigned int i = 0; i < globals::config.callstack_length &&
